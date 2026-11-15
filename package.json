@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "description": "Pins the AWS CDK CLI used locally and in CI.",
+  "scripts": {
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "aws-cdk": "2.1148.1"
+  }
+}

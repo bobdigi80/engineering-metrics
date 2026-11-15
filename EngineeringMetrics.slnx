@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/infra/">
+    <Project Path="infra/EngineeringMetrics.Infra/EngineeringMetrics.Infra.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/EngineeringMetrics.Api/EngineeringMetrics.Api.csproj" />
+    <Project Path="src/EngineeringMetrics.Collector/EngineeringMetrics.Collector.csproj" />
+    <Project Path="src/EngineeringMetrics.Core/EngineeringMetrics.Core.csproj" />
+    <Project Path="src/EngineeringMetrics.Storage/EngineeringMetrics.Storage.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EngineeringMetrics.Tests/EngineeringMetrics.Tests.csproj" />
+  </Folder>
+</Solution>

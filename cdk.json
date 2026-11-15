@@ -1,0 +1,8 @@
+{
+  "app": "dotnet run --project infra/EngineeringMetrics.Infra",
+  "context": {
+    "repositories": "aws/aws-lambda-dotnet,dotnet/aspire,App-vNext/Polly",
+    "allowedOrigins": "https://ianpotts.dev,https://www.ianpotts.dev,http://localhost:8000",
+    "githubRepository": "bobdigi80/engineering-metrics"
+  }
+}
