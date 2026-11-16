@@ -26,6 +26,7 @@ if (app.Node.TryGetContext("budgetEmail") is string budgetEmail)
         Description = "Engineering metrics: cost budget and GitHub Actions deploy role",
         BudgetEmail = budgetEmail,
         GitHubRepository = Context("githubRepository"),
+        GitHubOidcSubjectPrefix = Context("githubOidcSubjectPrefix"),
         CreateOidcProvider = app.Node.TryGetContext("createOidcProvider") as string != "false",
     });
 }

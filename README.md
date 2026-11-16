@@ -113,6 +113,8 @@ npx cdk synth
    npx cdk deploy EngineeringMetricsGuardrails -c budgetEmail=you@example.com
    ```
    If the account already has a GitHub OIDC provider, add `-c createOidcProvider=false`.
+
+   The deploy role only trusts this repository's `main` branch. If you fork this, set `githubRepository` and `githubOidcSubjectPrefix` in `cdk.json`; the prefix is the `sub_claim_prefix` from `gh api repos/OWNER/NAME/actions/oidc/customization/sub` (newer repositories use immutable IDs, e.g. `repo:owner@123/name@456`).
 4. **Configure GitHub.** In the repository's Settings → Secrets and variables → Actions → Variables, add:
    - `AWS_DEPLOY_ROLE_ARN`: the `DeployRoleArn` output from step 3
    - `AWS_REGION`: e.g. `eu-west-2`

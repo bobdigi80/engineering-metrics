@@ -3,6 +3,7 @@
   "context": {
     "repositories": "aws/aws-lambda-dotnet,dotnet/aspire,App-vNext/Polly",
     "allowedOrigins": "https://ianpotts.dev,https://www.ianpotts.dev,http://localhost:8000",
-    "githubRepository": "bobdigi80/engineering-metrics"
+    "githubRepository": "bobdigi80/engineering-metrics",
+    "githubOidcSubjectPrefix": "repo:bobdigi80@5314851/engineering-metrics@1459277097"
   }
 }

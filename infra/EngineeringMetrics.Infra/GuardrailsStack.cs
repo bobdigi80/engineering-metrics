@@ -15,6 +15,13 @@ public sealed class GuardrailsStackProps : StackProps
     /// <summary>The repository allowed to deploy, in <c>owner/name</c> form.</summary>
     public required string GitHubRepository { get; init; }
 
+    /// <summary>
+    /// The prefix of the OIDC subject claim GitHub issues for the repository. Newer repositories use
+    /// immutable IDs (<c>repo:owner@ownerId/name@repoId</c>) rather than <c>repo:owner/name</c>. Read it with
+    /// <c>gh api repos/OWNER/NAME/actions/oidc/customization/sub</c> (<c>sub_claim_prefix</c>).
+    /// </summary>
+    public required string GitHubOidcSubjectPrefix { get; init; }
+
     /// <summary>False if the account already has the GitHub OIDC provider (there can only be one).</summary>
     public bool CreateOidcProvider { get; init; } = true;
 }
@@ -64,7 +71,7 @@ public sealed class GuardrailsStack : Stack
                 {
                     [$"{issuer}:aud"] = "sts.amazonaws.com",
                     // Only workflows running on the main branch of this repository.
-                    [$"{issuer}:sub"] = $"repo:{props.GitHubRepository}:ref:refs/heads/main",
+                    [$"{issuer}:sub"] = $"{props.GitHubOidcSubjectPrefix}:ref:refs/heads/main",
                 },
             }),
         });
