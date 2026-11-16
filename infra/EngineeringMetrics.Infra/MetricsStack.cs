@@ -1,12 +1,16 @@
 using Amazon.CDK;
+using Amazon.CDK.AWS.CloudWatch;
+using Amazon.CDK.AWS.CloudWatch.Actions;
 using Amazon.CDK.AWS.DynamoDB;
 using Amazon.CDK.AWS.Events;
 using Amazon.CDK.AWS.Events.Targets;
 using Amazon.CDK.AWS.Lambda;
 using Amazon.CDK.AWS.Logs;
+using Amazon.CDK.AWS.SNS;
 using Amazon.CDK.AWS.SSM;
 using Constructs;
 using Attribute = Amazon.CDK.AWS.DynamoDB.Attribute;
+using CronOptions = Amazon.CDK.AWS.Events.CronOptions;
 using HttpMethod = Amazon.CDK.AWS.Lambda.HttpMethod;
 using LogGroupProps = Amazon.CDK.AWS.Logs.LogGroupProps;
 
@@ -71,6 +75,21 @@ public sealed class MetricsStack : Stack
             Targets = [new LambdaFunction(collector, new LambdaFunctionProps { RetryAttempts = 1 })],
         });
 
+        // The collector fails its invocation when any repository fails, so one alarm on errors covers
+        // a bad token, a renamed repository and GitHub being down. Subscribe to the topic by hand
+        // (see README) so no email address is committed or passed through CI.
+        var alerts = new Topic(this, "Alerts", new TopicProps { DisplayName = "Engineering metrics alerts" });
+        var collectorFailed = new Alarm(this, "CollectorFailed", new AlarmProps
+        {
+            AlarmDescription = "The engineering-metrics collector failed, so the published metrics are going stale.",
+            Metric = collector.MetricErrors(new MetricOptions { Period = Duration.Hours(1), Statistic = "Sum" }),
+            Threshold = 1,
+            EvaluationPeriods = 1,
+            ComparisonOperator = ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+            TreatMissingData = TreatMissingData.NOT_BREACHING,
+        });
+        collectorFailed.AddAlarmAction(new SnsAction(alerts));
+
         var api = new Function(this, "Api", new FunctionProps
         {
             Description = "Serves the latest pull request metrics as JSON",
@@ -80,6 +99,8 @@ public sealed class MetricsStack : Stack
             Code = Code.FromAsset("artifacts/api"),
             MemorySize = 512,
             Timeout = Duration.Seconds(10),
+            // The URL is public. This bounds what abuse can cost; a budget alert only reports it afterwards.
+            ReservedConcurrentExecutions = 5,
             LogGroup = LogGroup(this, "ApiLogs"),
             Environment = new Dictionary<string, string> { ["TABLE_NAME"] = table.TableName },
         });
@@ -99,6 +120,7 @@ public sealed class MetricsStack : Stack
 
         new CfnOutput(this, "ApiUrl", new CfnOutputProps { Value = url.Url });
         new CfnOutput(this, "TableName", new CfnOutputProps { Value = table.TableName });
+        new CfnOutput(this, "AlertsTopicArn", new CfnOutputProps { Value = alerts.TopicArn });
     }
 
     private static LogGroup LogGroup(Construct scope, string id) => new(scope, id, new LogGroupProps

@@ -10,4 +10,7 @@ public interface IMetricsReader
 {
     /// <summary>The most recent snapshot for every repository.</summary>
     Task<IReadOnlyList<MetricsSnapshot>> GetLatestAsync(CancellationToken cancellationToken);
+
+    /// <summary>One repository's snapshots generated at or after <paramref name="since"/>, oldest first.</summary>
+    Task<IReadOnlyList<MetricsSnapshot>> GetHistoryAsync(string repository, DateTimeOffset since, CancellationToken cancellationToken);
 }

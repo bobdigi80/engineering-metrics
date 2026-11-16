@@ -25,13 +25,34 @@ public sealed class DynamoMetricsStore(IAmazonDynamoDB dynamo, string tableName)
         {
             TransactItems =
             [
-                Put($"REPO#{snapshot.Repository}", snapshot.GeneratedAt.ToString("O"), data),
+                Put(HistoryPartition(snapshot.Repository), snapshot.GeneratedAt.ToUniversalTime().ToString("O"), data),
                 Put(LatestPartition, snapshot.Repository, data),
             ],
         }, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<MetricsSnapshot>> GetLatestAsync(CancellationToken cancellationToken)
+    public Task<IReadOnlyList<MetricsSnapshot>> GetLatestAsync(CancellationToken cancellationToken) =>
+        QueryAsync("pk = :pk", new() { [":pk"] = new AttributeValue { S = LatestPartition } }, cancellationToken);
+
+    /// <summary>
+    /// History sort keys are round-trip UTC timestamps, which sort as text in time order,
+    /// so the range is a key condition and the items come back oldest first.
+    /// </summary>
+    public Task<IReadOnlyList<MetricsSnapshot>> GetHistoryAsync(
+        string repository, DateTimeOffset since, CancellationToken cancellationToken) =>
+        QueryAsync(
+            "pk = :pk AND sk >= :since",
+            new()
+            {
+                [":pk"] = new AttributeValue { S = HistoryPartition(repository) },
+                [":since"] = new AttributeValue { S = since.ToUniversalTime().ToString("O") },
+            },
+            cancellationToken);
+
+    private static string HistoryPartition(string repository) => $"REPO#{repository}";
+
+    private async Task<IReadOnlyList<MetricsSnapshot>> QueryAsync(
+        string keyCondition, Dictionary<string, AttributeValue> values, CancellationToken cancellationToken)
     {
         var snapshots = new List<MetricsSnapshot>();
         Dictionary<string, AttributeValue>? startKey = null;
@@ -41,8 +62,8 @@ public sealed class DynamoMetricsStore(IAmazonDynamoDB dynamo, string tableName)
             var response = await dynamo.QueryAsync(new QueryRequest
             {
                 TableName = tableName,
-                KeyConditionExpression = "pk = :pk",
-                ExpressionAttributeValues = new() { [":pk"] = new AttributeValue { S = LatestPartition } },
+                KeyConditionExpression = keyCondition,
+                ExpressionAttributeValues = values,
                 ExclusiveStartKey = startKey,
             }, cancellationToken);
 

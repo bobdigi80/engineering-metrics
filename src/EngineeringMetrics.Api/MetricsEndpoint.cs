@@ -8,8 +8,14 @@ namespace EngineeringMetrics.Api;
 /// Handles requests from the Lambda Function URL (payload format 2.0).
 /// CORS preflight is answered by the Function URL itself, configured in the CDK stack.
 /// </summary>
-public sealed class MetricsEndpoint(IMetricsReader reader)
+public sealed class MetricsEndpoint(IMetricsReader reader, TimeProvider? time = null)
 {
+    /// <summary>How far back <c>/history</c> goes. Bounds the size and cost of a single request.</summary>
+    public static readonly TimeSpan HistoryWindow = TimeSpan.FromDays(90);
+
+    // Longer than any real "owner/name"; stops arbitrary strings being sent to the database.
+    private const int MaxRepositoryLength = 140;
+
     public async Task<APIGatewayHttpApiV2ProxyResponse> HandleAsync(
         APIGatewayHttpApiV2ProxyRequest request, CancellationToken cancellationToken)
     {
@@ -19,6 +25,11 @@ public sealed class MetricsEndpoint(IMetricsReader reader)
         if (!string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase))
         {
             return Json(405, new { error = "Method not allowed" });
+        }
+
+        if (path == "/history")
+        {
+            return await HistoryAsync(request, cancellationToken);
         }
 
         if (path is not ("/" or "/metrics"))
@@ -31,6 +42,23 @@ public sealed class MetricsEndpoint(IMetricsReader reader)
 
         // Data changes once a day, so let browsers and any CDN cache it for an hour.
         return Json(200, body, cacheSeconds: 3600);
+    }
+
+    private async Task<APIGatewayHttpApiV2ProxyResponse> HistoryAsync(
+        APIGatewayHttpApiV2ProxyRequest request, CancellationToken cancellationToken)
+    {
+        string? repository = null;
+        request.QueryStringParameters?.TryGetValue("repository", out repository);
+
+        if (string.IsNullOrWhiteSpace(repository) || repository.Length > MaxRepositoryLength)
+        {
+            return Json(400, new { error = "Pass ?repository=owner/name" });
+        }
+
+        var since = (time ?? TimeProvider.System).GetUtcNow() - HistoryWindow;
+        var snapshots = await reader.GetHistoryAsync(repository, since, cancellationToken);
+
+        return Json(200, new { repository, snapshots = snapshots.OrderBy(s => s.GeneratedAt) }, cacheSeconds: 3600);
     }
 
     private static APIGatewayHttpApiV2ProxyResponse Json(int status, object body, int? cacheSeconds = null)

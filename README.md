@@ -80,6 +80,8 @@ The Lambda entry points (`Function.cs`) only read configuration and wire depende
 }
 ```
 
+`GET /history?repository=owner/name` returns up to 90 days of daily snapshots for one repository, oldest first, as `{ "repository": "...", "snapshots": [ ... ] }` with the same fields.
+
 Responses are cacheable for an hour. CORS allows the origins in `cdk.json`.
 
 ## Running locally
@@ -119,6 +121,11 @@ npx cdk synth
    - `AWS_DEPLOY_ROLE_ARN`: the `DeployRoleArn` output from step 3
    - `AWS_REGION`: e.g. `eu-west-2`
 
+5. **Subscribe to failure alerts** (optional). The application stack has an alarm that fires when a collector run fails. To get it by email, subscribe to the `AlertsTopicArn` stack output and confirm the email AWS sends:
+   ```
+   aws sns subscribe --topic-arn <AlertsTopicArn> --protocol email --notification-endpoint you@example.com
+   ```
+
 ### From then on
 
 Every push to `main` runs the build, the tests and `cdk synth`, then deploys the application stack. Pull requests run everything except the deploy.
@@ -129,7 +136,7 @@ To change which repositories are measured, edit `repositories` in `cdk.json`.
 
 ## Cost
 
-At portfolio traffic, everything is pay-per-use and expected to cost well under $1 a month: Lambda requests and compute fall inside the always-free tier, DynamoDB on-demand handles a few writes a day, and logs are kept for two weeks. The guardrails stack adds a $5 monthly budget with email alerts as a backstop.
+At portfolio traffic, everything is pay-per-use and expected to cost well under $1 a month: Lambda requests and compute fall inside the always-free tier, DynamoDB on-demand handles a few writes a day, and logs are kept for two weeks. The guardrails stack adds a $5 monthly budget with email alerts as a backstop, and the public API Lambda is limited to five concurrent executions so abuse of the URL cannot run up a bill.
 
 ## License
 
