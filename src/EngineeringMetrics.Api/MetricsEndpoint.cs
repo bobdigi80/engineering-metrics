@@ -35,7 +35,14 @@ public sealed class MetricsEndpoint(IMetricsReader reader)
 
     private static APIGatewayHttpApiV2ProxyResponse Json(int status, object body, int? cacheSeconds = null)
     {
-        var headers = new Dictionary<string, string> { ["Content-Type"] = "application/json" };
+        var headers = new Dictionary<string, string>
+        {
+            ["Content-Type"] = "application/json",
+            // The Function URL only adds the CORS headers (and its own Vary) when a request has an Origin.
+            // Without this, a browser that cached a direct visit would reuse that copy, which has no
+            // Access-Control-Allow-Origin, for a later cross-origin fetch, and the fetch would fail.
+            ["Vary"] = "Origin",
+        };
         headers["Cache-Control"] = cacheSeconds is { } seconds ? $"public, max-age={seconds}" : "no-store";
 
         return new APIGatewayHttpApiV2ProxyResponse

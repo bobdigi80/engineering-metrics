@@ -31,6 +31,7 @@ public class MetricsEndpointTests
 
         Assert.Equal(200, response.StatusCode);
         Assert.Equal("public, max-age=3600", response.Headers["Cache-Control"]);
+        Assert.Equal("Origin", response.Headers["Vary"]);
 
         using var json = JsonDocument.Parse(response.Body);
         var repos = json.RootElement.GetProperty("repositories");
