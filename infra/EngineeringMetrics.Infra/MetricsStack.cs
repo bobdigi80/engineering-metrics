@@ -44,7 +44,7 @@ public sealed class MetricsStack : Stack
             Handler = "EngineeringMetrics.Collector::EngineeringMetrics.Collector.Function::HandleAsync",
             Code = Code.FromAsset("artifacts/collector"),
             MemorySize = 512,
-            Timeout = Duration.Minutes(2),
+            Timeout = Duration.Minutes(5),
             LogGroup = LogGroup(this, "CollectorLogs"),
             Environment = new Dictionary<string, string>
             {

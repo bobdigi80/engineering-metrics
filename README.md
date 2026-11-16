@@ -65,7 +65,7 @@ The Lambda entry points (`Function.cs`) only read configuration and wire depende
 {
   "repositories": [
     {
-      "repository": "dotnet/aspire",
+      "repository": "microsoft/aspire",
       "generatedAt": "2026-11-15T05:00:02+00:00",
       "windowDays": 30,
       "mergedPullRequests": 48,

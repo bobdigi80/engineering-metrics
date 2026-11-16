@@ -3,7 +3,7 @@ using EngineeringMetrics.Core;
 
 namespace EngineeringMetrics.Collector;
 
-public sealed record CollectorOptions(IReadOnlyList<string> Repositories, TimeSpan Window, int PullRequestsPerRepository = 50);
+public sealed record CollectorOptions(IReadOnlyList<string> Repositories, TimeSpan Window);
 
 public sealed record CollectorResult(IReadOnlyList<MetricsSnapshot> Snapshots, IReadOnlyList<string> FailedRepositories);
 
@@ -29,8 +29,8 @@ public sealed class CollectorService(
         {
             try
             {
-                var pullRequests = await gitHub.GetRecentMergedPullRequestsAsync(
-                    repository, options.PullRequestsPerRepository, cancellationToken);
+                var pullRequests = await gitHub.GetMergedPullRequestsSinceAsync(
+                    repository, now - options.Window, cancellationToken);
                 var snapshot = MetricsCalculator.Calculate(repository, pullRequests, now, options.Window);
                 await store.SaveAsync(snapshot, cancellationToken);
                 snapshots.Add(snapshot);

@@ -61,7 +61,7 @@ public class CollectorServiceTests
 
     private sealed class FakeGitHub(Dictionary<string, PullRequest[]> data) : IGitHubClient
     {
-        public Task<IReadOnlyList<PullRequest>> GetRecentMergedPullRequestsAsync(string repository, int count, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<PullRequest>> GetMergedPullRequestsSinceAsync(string repository, DateTimeOffset since, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return data.TryGetValue(repository, out var prs)
